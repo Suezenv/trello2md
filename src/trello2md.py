@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# coding: utf8
 
 """ 
 Terminal program to convert Trello's json-exports to markdown.
@@ -125,6 +126,8 @@ def main():
     
     parser = argparse.ArgumentParser(description = 'Convert a JSON export from Trello to Markdown.')
     parser.add_argument('inputfile', help = 'The input JSON file')
+    parser.add_argument('-O', '--to-stdout', help = 'Write file to the standard output',
+                        action = 'store_true')
     parser.add_argument('-o', '--output', help = 'The output file to create')
     parser.add_argument('-i', '--header', help = 'Include header page',
                         action = 'store_true')
@@ -140,6 +143,10 @@ def main():
                         default = 'utf8')
 
     args = parser.parse_args()
+
+    if args.card_links:
+      print('Option --card-links is currently unimplemented')
+      exit(1)
 
     # load infile to 'data'
     try:
@@ -177,21 +184,28 @@ def main():
                     markdown.append(print_checklists(card['id'], data))
 
     # save result to file
-    if (args.output):
-        outputfile = args.output
+    to_stdout = False
+    if (args.to_stdout):
+      to_stdout = True 
     else:
-        outputfile = args.inputfile.replace('.json', '.md')
-        if outputfile == args.inputfile:
-            outputfile += '.md'
+      if (args.output):
+          outputfile = args.output
+      else:
+          outputfile = args.inputfile.replace('.json', '.md')
+          if outputfile == args.inputfile:
+              outputfile += '.md'
 
     try:
-        with open(outputfile, 'w', encoding = args.encoding) as of:
+        if(not to_stdout):
+          with open(outputfile, 'w', encoding = args.encoding) as of:
             of.write(''.join(markdown))
+          print('Sucessfully translated to "{0}"!'.format(outputfile))
 
-        print('Sucessfully translated to "{0}"!'.format(outputfile))
-
-        if args.card_links:
-            print('Option --card-links is currently unimplemented and ignored.')
+        else:
+          markdownText = ''.join(markdown)
+          sys.stdout.reconfigure(encoding='utf-8')
+          sys.stdout.write(markdownText)
+        
 
     except IOError as e:
         sys.exit('I/O error({0}): {1}'.format(e.errno, e.strerror))
@@ -199,4 +213,3 @@ def main():
 ################################################################################
 if __name__ == '__main__':
     main()
-
